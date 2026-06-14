@@ -1,13 +1,10 @@
 class HamTools < Formula
   desc "Command-line amateur-radio tools: callsign lookup, bearings, DX cluster monitors"
   homepage "https://github.com/Guru-RF/ham-tools"
+  url "https://github.com/Guru-RF/ham-tools/archive/refs/tags/v0.1.0.tar.gz"
+  sha256 "345c46e0bd8f772bd106587efdebd1caaca2487bb3239cfe2fc36ff67afce38c"
   license "MIT"
   head "https://github.com/Guru-RF/ham-tools.git", branch: "master"
-
-  # Stable release: tag one in the repo, then uncomment and fill these in.
-  #   curl -sL https://github.com/Guru-RF/ham-tools/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256
-  # url "https://github.com/Guru-RF/ham-tools/archive/refs/tags/v0.1.0.tar.gz"
-  # sha256 "REPLACE_ME"
 
   depends_on "pkg-config" => :build
   depends_on "jansson"
