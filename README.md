@@ -21,11 +21,15 @@ brew tap Guru-RF/ham-tools
 brew install ham-tools
 ```
 
-This builds all five tools and installs them onto your `PATH`. See
-[Packaging for Homebrew](#packaging-for-homebrew) below for how the tap is set up.
+This builds all five tools and installs them onto your `PATH`.
 
-> If you have no release tagged yet, install the development version straight
-> from `master`:
+> Homebrew may ask you to trust the tap the first time you use it:
+>
+> ```sh
+> brew trust guru-rf/ham-tools
+> ```
+>
+> To build the latest development version straight from `master` instead:
 >
 > ```sh
 > brew install --HEAD Guru-RF/ham-tools/ham-tools
@@ -144,44 +148,4 @@ dxheat                   # live cluster TUI
 dxheat --dump
 holycluster              # live WebSocket cluster TUI
 holycluster --dump
-```
-
----
-
-## Packaging for Homebrew
-
-`brew install ham-tools` is served from a **tap** — a GitHub repo named
-`homebrew-ham-tools` under the same org. Setting it up once:
-
-1. Create a repo `Guru-RF/homebrew-ham-tools`.
-2. Copy [`Formula/ham-tools.rb`](Formula/ham-tools.rb) from this repo into the
-   tap's `Formula/` directory.
-3. (Recommended) tag a release here so the formula can pin a stable tarball:
-
-   ```sh
-   git tag v0.1.0 && git push --tags
-   ```
-
-   then fill in `url` + `sha256` in the formula. Get the checksum with:
-
-   ```sh
-   curl -sL https://github.com/Guru-RF/ham-tools/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256
-   ```
-
-Users then get the short-name install:
-
-```sh
-brew tap Guru-RF/ham-tools
-brew install ham-tools
-```
-
-The formula just delegates to the Makefile's `install` target with a
-Homebrew-controlled `PREFIX`, so the build stays in one place.
-
-Try a formula edit locally before pushing it:
-
-```sh
-brew install --build-from-source ./Formula/ham-tools.rb
-brew test ham-tools
-brew audit --new ham-tools
 ```
