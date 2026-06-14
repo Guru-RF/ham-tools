@@ -1,0 +1,16 @@
+# Build artifacts
+*.o
+*.a
+
+# Compiled binaries
+/c/qte/qte
+/c/qrz/qrz
+/c/dxsummit/dxsummit
+/c/dxheat/dxheat
+/c/holycluster/holycluster
+
+# macOS
+.DS_Store
+
+# Claude Code (local session config / permissions)
+.claude/
