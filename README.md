@@ -3,7 +3,7 @@
 A small suite of command-line amateur-radio tools written in C.
 
 | Tool | What it does |
-|------|--------------|
+| ---- | ------------ |
 | `qrz` | QRZ.com callsign lookup — one-shot or interactive REPL, with a local SQLite cache and a FIFO for feeding lookups from other programs |
 | `qte` | Bearing/heading lookup — geocodes an address (OpenStreetMap Nominatim) and prints the grid square, short-path heading, long-path and compass bearing from your QTH |
 | `dxsummit` | Live [DX Summit](https://www.dxsummit.fi/) cluster spots — ncurses TUI (or `--dump` for plain text) |
@@ -23,10 +23,11 @@ brew install ham-tools
 
 This builds all five tools and installs them onto your `PATH`.
 
-> Homebrew may ask you to trust the tap the first time you use it:
+> If Homebrew refuses to load the formula from this untrusted third-party
+> tap, trust it once and re-run the install:
 >
 > ```sh
-> brew trust guru-rf/ham-tools
+> brew trust Guru-RF/ham-tools
 > ```
 >
 > To build the latest development version straight from `master` instead:
@@ -44,7 +45,7 @@ This builds all five tools and installs them onto your `PATH`.
 The tools link against a handful of system libraries:
 
 | Library | Used by | pkg config |
-|---------|---------|------------|
+| ------- | ------- | ---------- |
 | libcurl | all | `-lcurl` |
 | libyaml | all (config parsing) | `yaml-0.1` |
 | jansson | `qte`, `dxheat`, `holycluster` | `jansson` |
@@ -106,7 +107,7 @@ The Makefile honours the usual overrides, e.g. `make CC=gcc`,
 
 All tools read a single YAML file:
 
-```
+```text
 ~/.config/ham-tools/config.yaml
 ```
 

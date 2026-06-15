@@ -29,5 +29,9 @@ class HamTools < Formula
   test do
     # qte prints its usage to stderr and exits 1 when given no address.
     assert_match "qte <address>", shell_output("#{bin}/qte 2>&1", 1)
+
+    # The other four tools need network/config to do anything useful, so just
+    # confirm each binary was installed (catches link/install regressions).
+    %w[qrz dxsummit dxheat holycluster].each { |t| assert_path_exists bin/t }
   end
 end
