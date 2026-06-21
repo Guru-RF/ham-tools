@@ -47,7 +47,16 @@ winget install Guru-RF.ham-tools
 ```
 
 winget picks the right architecture automatically and puts `qrz`, `qte`,
-`dxsummit`, `dxheat` and `holycluster` on your `PATH`.
+`dxsummit`, `dxheat` and `holycluster` on your `PATH`. Open a **new** terminal
+afterwards so the updated `PATH` takes effect, then create your config file
+(see [Configuration](#configuration)) before running `qrz` or `qte`.
+
+Upgrade or remove later with:
+
+```pwsh
+winget upgrade Guru-RF.ham-tools
+winget uninstall Guru-RF.ham-tools
+```
 
 > **Windows differences.** The tools are built as native binaries with MSYS2
 > MinGW-w64. One-shot lookups, the `qrz` REPL and the cluster TUIs all work the
@@ -149,12 +158,13 @@ The Makefile honours the usual overrides, e.g. `make CC=gcc`,
 
 All tools read a single YAML file:
 
-```text
-~/.config/ham-tools/config.yaml
-```
+| Platform | Location |
+| -------- | -------- |
+| Linux / macOS | `~/.config/ham-tools/config.yaml` |
+| Windows | `%APPDATA%\ham-tools\config.yaml` |
 
-The same directory also holds the `qrz` SQLite cache, REPL history, and the
-lookup FIFO. A minimal config:
+The same directory also holds the `qrz` SQLite cache and REPL history (and, on
+Linux/macOS, the lookup FIFO). A minimal config:
 
 ```yaml
 verbose: false
@@ -173,6 +183,27 @@ qrz:
 # Optional: override the qrz lookup FIFO path
 # fifo: /tmp/qrz.fifo
 ```
+
+### Editing the config on Windows
+
+The config lives at `%APPDATA%\ham-tools\config.yaml` — which expands to
+`C:\Users\<you>\AppData\Roaming\ham-tools\config.yaml` (the `AppData` folder is
+hidden in Explorer). The easiest way to create and open it is from PowerShell:
+
+```pwsh
+$dir = "$env:APPDATA\ham-tools"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+notepad "$dir\config.yaml"
+```
+
+Paste the YAML above, set your `qth` and QRZ.com credentials, and save. A few
+Windows-specific tips:
+
+- Save as plain **UTF-8**. If Notepad's *Save as type* adds a `.txt` extension,
+  set it to **All files** and keep the name `config.yaml`.
+- Use **spaces**, not tabs, for indentation (YAML rejects tabs).
+- Paths in the config use forward slashes or escaped backslashes; the default
+  cache/history locations need no configuration.
 
 ---
 

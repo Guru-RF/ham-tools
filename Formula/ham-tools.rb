@@ -1,8 +1,8 @@
 class HamTools < Formula
   desc "Command-line amateur-radio tools: callsign lookup, bearings, DX cluster monitors"
   homepage "https://github.com/Guru-RF/ham-tools"
-  url "https://github.com/Guru-RF/ham-tools/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "345c46e0bd8f772bd106587efdebd1caaca2487bb3239cfe2fc36ff67afce38c"
+  url "https://github.com/Guru-RF/ham-tools/archive/refs/tags/v0.2.0.tar.gz"
+  sha256 "ece5c0d90bfdd718a54208bc48a7f6c292b8e5ffe5d65990a842fb3811b10573"
   license "MIT"
   head "https://github.com/Guru-RF/ham-tools.git", branch: "master"
 
