@@ -38,6 +38,28 @@ This builds all five tools and installs them onto your `PATH`.
 
 ---
 
+## Install on Windows (winget)
+
+Native Windows builds are available for both **x64** (Intel/AMD) and **ARM64**:
+
+```pwsh
+winget install Guru-RF.ham-tools
+```
+
+winget picks the right architecture automatically and puts `qrz`, `qte`,
+`dxsummit`, `dxheat` and `holycluster` on your `PATH`.
+
+> **Windows differences.** The tools are built as native binaries with MSYS2
+> MinGW-w64. One-shot lookups, the `qrz` REPL and the cluster TUIs all work the
+> same as on macOS/Linux, with two caveats:
+>
+> - The `qrz` lookup **FIFO** — and the dx\* TUIs' "feed the selected callsign
+>   into a running `qrz`" channel — is a POSIX named pipe and is **disabled on
+>   Windows**. One-shot lookups and the interactive REPL are unaffected.
+> - Config lives in `%APPDATA%\ham-tools\` instead of `~/.config/ham-tools/`.
+
+---
+
 ## Build from source
 
 ### Dependencies
@@ -74,6 +96,26 @@ sudo apt install build-essential pkg-config \
   libcurl4-openssl-dev libjansson-dev libyaml-dev libwebsockets-dev \
   libreadline-dev libsqlite3-dev libxml2-dev libncurses-dev
 ```
+
+#### Windows (MSYS2 / MinGW-w64)
+
+Install [MSYS2](https://www.msys2.org/) and build from the **UCRT64** shell on
+x64, or the **CLANGARM64** shell on Windows-on-ARM. Replace the package prefix
+below to match (`mingw-w64-ucrt-x86_64-` for UCRT64,
+`mingw-w64-clang-aarch64-` for CLANGARM64):
+
+```sh
+pacman -S --needed \
+  mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make \
+  mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-curl \
+  mingw-w64-ucrt-x86_64-libyaml mingw-w64-ucrt-x86_64-jansson \
+  mingw-w64-ucrt-x86_64-libxml2 mingw-w64-ucrt-x86_64-sqlite3 \
+  mingw-w64-ucrt-x86_64-ncurses mingw-w64-ucrt-x86_64-readline \
+  mingw-w64-ucrt-x86_64-libwebsockets
+```
+
+The Makefile auto-detects MSYS2 (adds `.exe`, links `ncursesw`, builds with
+`-std=gnu11`). On CLANGARM64 build with `make -C c CC=clang`.
 
 ### Compile
 

@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+
+#include "../common/compat.h"
 
 static const char *SPOTS_URL = "https://dxheat.com/source/spots/?a=100";
 

@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+#
+# TEMPLATE — before submitting to microsoft/winget-pkgs, replace each
+# InstallerSha256 with the real hash from the GitHub Release. The CI build
+# (.github/workflows/windows.yml) prints it as "<zip>.sha256" for each arch,
+# or run:  winget hash <path-to-zip>
+PackageIdentifier: Guru-RF.ham-tools
+PackageVersion: 0.2.0
+Platform:
+  - Windows.Desktop
+MinimumOSVersion: 10.0.0.0
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: ham-tools\qrz.exe
+    PortableCommandAlias: qrz
+  - RelativeFilePath: ham-tools\qte.exe
+    PortableCommandAlias: qte
+  - RelativeFilePath: ham-tools\dxsummit.exe
+    PortableCommandAlias: dxsummit
+  - RelativeFilePath: ham-tools\dxheat.exe
+    PortableCommandAlias: dxheat
+  - RelativeFilePath: ham-tools\holycluster.exe
+    PortableCommandAlias: holycluster
+UpgradeBehavior: install
+ReleaseDate: 2026-06-21
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/Guru-RF/ham-tools/releases/download/v0.2.0/ham-tools-0.2.0-windows-x64.zip
+    # TODO: replace with the real SHA256 of the x64 zip.
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+  - Architecture: arm64
+    InstallerUrl: https://github.com/Guru-RF/ham-tools/releases/download/v0.2.0/ham-tools-0.2.0-windows-arm64.zip
+    # TODO: replace with the real SHA256 of the arm64 zip.
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+ManifestType: installer
+ManifestVersion: 1.6.0

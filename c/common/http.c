@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "compat.h"
+
 void ham_buf_free(ham_buf *b) {
     if (!b) return;
     free(b->data);

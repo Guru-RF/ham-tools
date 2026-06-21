@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <string.h>
 
+/* M_PI is not ISO C; MinGW hides it under a strict -std and some libcs omit it. */
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 static const double DEG = M_PI / 180.0;
 
 int ham_latlon_to_locator(double lat, double lon, char out[8]) {

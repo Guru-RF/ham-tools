@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../common/compat.h"
+
 void ham_qrzapi_init(ham_qrzapi *a, const char *user, const char *pwd) {
     memset(a, 0, sizeof(*a));
     if (user) a->username = strdup(user);

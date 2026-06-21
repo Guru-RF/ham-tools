@@ -2,7 +2,6 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <locale.h>
 #include <ncurses.h>
 #include <pthread.h>
@@ -10,8 +9,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#endif
+
+#include "compat.h"
 
 /* ---- shared state ---- */
 
@@ -66,6 +71,14 @@ static const char *khz_to_band(double khz) {
 
 /* ---- FIFO writer (best-effort) ---- */
 
+#ifdef _WIN32
+
+/* The qrz live-feed command channel is a POSIX named FIFO, which Windows
+ * has no equivalent for; the feature is simply disabled on Windows. */
+static void fifo_send(const char *call) { (void)call; }
+
+#else
+
 static void fifo_open(void) {
     if (g_fifo_path[0] == '\0') return;
     g_fifo_fd = open(g_fifo_path, O_WRONLY | O_NONBLOCK);
@@ -81,6 +94,8 @@ static void fifo_send(const char *call) {
         g_fifo_fd = -1;
     }
 }
+
+#endif
 
 /* ---- filters ---- */
 
@@ -223,6 +238,7 @@ int ham_tui_init(const char *title, const char *fifo_path) {
     } else {
         g_fifo_path[0] = '\0';
     }
+    ham_win_console_init();   /* UTF-8 console on Windows; no-op on POSIX */
     setlocale(LC_ALL, "");
     initscr();
     noecho();
@@ -351,5 +367,7 @@ void ham_tui_run(void) {
 
 void ham_tui_cleanup(void) {
     endwin();
+#ifndef _WIN32
     if (g_fifo_fd >= 0) close(g_fifo_fd);
+#endif
 }

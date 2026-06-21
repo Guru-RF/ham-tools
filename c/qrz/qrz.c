@@ -8,25 +8,31 @@
 
 #include <ctype.h>
 #include <errno.h>
-#include <fcntl.h>
 #include <stdio.h>
 #include <readline/history.h>
 #include <readline/readline.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _WIN32
+#include <fcntl.h>
 #include <sys/select.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#endif
+
+#include "../common/compat.h"
 
 static ham_config  g_cfg;
 static ham_cache  *g_cache;
 static ham_qrzapi  g_api;
 static int         g_oneshot = 0;
 static int         g_running = 1;
+#ifndef _WIN32
 static int         g_fifo_fd = -1;
+#endif
 static char        g_history[1024];
 
 static char **g_calls;
@@ -188,6 +194,9 @@ static void line_handler(char *line) {
 }
 
 /* ----------------------- FIFO ----------------------- */
+/* The FIFO command channel (fed by the dx* TUIs) is POSIX-only: Windows
+ * has no mkfifo and Winsock select() cannot watch a FIFO or the console. */
+#ifndef _WIN32
 
 static void setup_fifo(void) {
     if (mkfifo(g_cfg.fifo_path, 0600) == -1 && errno != EEXIST) {
@@ -229,6 +238,8 @@ static void drain_fifo(void) {
     fill = remaining;
 }
 
+#endif /* !_WIN32 */
+
 /* ----------------------- main ----------------------- */
 
 static void on_sigint(int s) { (void)s; g_running = 0; }
@@ -259,12 +270,20 @@ int main(int argc, char **argv) {
     ham_configfile(g_history, sizeof(g_history), "qrz-history");
     read_history(g_history);
 
-    setup_fifo();
-
     rl_attempted_completion_function = completer;
-    rl_callback_handler_install("qrz> ", line_handler);
-
     signal(SIGINT, on_sigint);
+
+#ifdef _WIN32
+    /* No POSIX FIFO and no select() over the console on Windows: run a
+     * plain blocking readline() REPL (no live FIFO feed). */
+    {
+        char *line;
+        while (g_running && (line = readline("qrz> ")) != NULL)
+            line_handler(line);   /* takes ownership of, and frees, line */
+    }
+#else
+    setup_fifo();
+    rl_callback_handler_install("qrz> ", line_handler);
 
     while (g_running) {
         fd_set fds;
@@ -286,10 +305,13 @@ int main(int argc, char **argv) {
     }
 
     rl_callback_handler_remove();
+#endif
     write_history(g_history);
 
 cleanup:
+#ifndef _WIN32
     if (g_fifo_fd >= 0) close(g_fifo_fd);
+#endif
     if (g_calls) {
         for (size_t i = 0; i < g_calls_n; i++) free(g_calls[i]);
         free(g_calls);

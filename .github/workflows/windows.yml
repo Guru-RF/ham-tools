@@ -1,0 +1,120 @@
+name: Windows
+
+# Builds native Windows binaries for x86_64 (Intel/AMD) and ARM64 under
+# MSYS2 MinGW-w64, bundles their runtime DLLs into portable .zip archives,
+# and (on a version tag) publishes them to a GitHub Release for winget.
+
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write   # needed to create/update the Release on tag pushes
+
+jobs:
+  build:
+    name: ${{ matrix.arch }} (${{ matrix.sys }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # x86_64 — standard GitHub-hosted Windows runner.
+          - arch: x64
+            runner: windows-latest
+            sys: UCRT64
+            prefix: mingw-w64-ucrt-x86_64
+            cc: gcc
+          # ARM64 — requires a Windows-on-ARM runner (GitHub "windows-11-arm").
+          - arch: arm64
+            runner: windows-11-arm
+            sys: CLANGARM64
+            prefix: mingw-w64-clang-aarch64
+            cc: clang
+
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up MSYS2 (${{ matrix.sys }})
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.sys }}
+          update: true
+          install: >-
+            base-devel
+            zip
+            ${{ matrix.prefix }}-${{ matrix.cc }}
+            ${{ matrix.prefix }}-make
+            ${{ matrix.prefix }}-pkgconf
+            ${{ matrix.prefix }}-curl
+            ${{ matrix.prefix }}-libyaml
+            ${{ matrix.prefix }}-jansson
+            ${{ matrix.prefix }}-libxml2
+            ${{ matrix.prefix }}-sqlite3
+            ${{ matrix.prefix }}-ncurses
+            ${{ matrix.prefix }}-readline
+            ${{ matrix.prefix }}-libwebsockets
+
+      - name: Build
+        run: make -C c CC=${{ matrix.cc }}
+
+      - name: Determine version
+        id: ver
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            v="${GITHUB_REF_NAME#v}"
+          else
+            v="dev-${GITHUB_SHA::8}"
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Stage binaries + runtime DLLs
+        run: |
+          set -euo pipefail
+          # Fixed internal folder name so the winget manifest can share one
+          # NestedInstallerFiles list across architectures.
+          stage="ham-tools"
+          mkdir -p "$stage"
+          for t in qte qrz dxsummit dxheat holycluster; do
+            cp "c/$t/$t.exe" "$stage/"
+          done
+          # Copy every dependent DLL that lives under the MinGW prefix
+          # (ldd is transitive). System DLLs in C:\Windows are left out.
+          for exe in "$stage"/*.exe; do
+            ldd "$exe" | awk -v p="$MINGW_PREFIX" '$3 ~ "^"p"/" {print $3}'
+          done | sort -u | while read -r dll; do
+            cp -n "$dll" "$stage/"
+          done
+          cp README.md LICENSE "$stage/" 2>/dev/null || true
+          ls -l "$stage"
+          zipbase="ham-tools-${{ steps.ver.outputs.version }}-windows-${{ matrix.arch }}"
+          echo "zipbase=$zipbase" >> "$GITHUB_ENV"
+
+      - name: Package zip
+        run: |
+          set -euo pipefail
+          zip -r -9 "${zipbase}.zip" ham-tools
+          sha256sum "${zipbase}.zip" | tee "${zipbase}.zip.sha256"
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ham-tools-windows-${{ matrix.arch }}
+          path: |
+            ${{ env.zipbase }}.zip
+            ${{ env.zipbase }}.zip.sha256
+
+      - name: Publish to release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.zipbase }}.zip
+            ${{ env.zipbase }}.zip.sha256

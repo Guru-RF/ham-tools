@@ -7,6 +7,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "../common/compat.h"
+
 struct ham_cache {
     sqlite3 *db;
 };

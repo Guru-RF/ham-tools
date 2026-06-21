@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../common/compat.h"
+
 void ham_fields_init(ham_fields *f) {
     f->items = NULL; f->n = 0; f->cap = 0;
 }
@@ -47,26 +49,47 @@ const char *ham_fields_get(const ham_fields *f, const char *key) {
     return NULL;
 }
 
-/* Encode \n and = inside values as \\n and \\e so round-trip is safe. */
-static void enc_write(FILE *fp, const char *s) {
-    for (; *s; s++) {
-        if (*s == '\\')      fputs("\\\\", fp);
-        else if (*s == '\n') fputs("\\n", fp);
-        else                 fputc(*s, fp);
+/* Append n bytes to a growable heap buffer; returns 0 on success, -1 on OOM. */
+static int buf_append(char **buf, size_t *len, size_t *cap,
+                      const char *s, size_t n) {
+    if (*len + n + 1 > *cap) {
+        size_t ncap = *cap ? *cap : 256;
+        while (*len + n + 1 > ncap) ncap *= 2;
+        char *nb = realloc(*buf, ncap);
+        if (!nb) return -1;
+        *buf = nb; *cap = ncap;
     }
+    memcpy(*buf + *len, s, n);
+    *len += n;
+    (*buf)[*len] = '\0';
+    return 0;
 }
 
-char *ham_fields_serialize(const ham_fields *f) {
-    char *buf = NULL; size_t len = 0;
-    FILE *fp = open_memstream(&buf, &len);
-    if (!fp) return NULL;
-    for (size_t i = 0; i < f->n; i++) {
-        fputs(f->items[i].key, fp);
-        fputc('=', fp);
-        enc_write(fp, f->items[i].val);
-        fputc('\n', fp);
+/* Encode '\\' and '\n' inside values as "\\\\" and "\\n" so round-trip is safe. */
+static int enc_append(char **buf, size_t *len, size_t *cap, const char *s) {
+    for (; *s; s++) {
+        if (*s == '\\') { if (buf_append(buf, len, cap, "\\\\", 2)) return -1; }
+        else if (*s == '\n') { if (buf_append(buf, len, cap, "\\n", 2)) return -1; }
+        else { if (buf_append(buf, len, cap, s, 1)) return -1; }
     }
-    fclose(fp);
+    return 0;
+}
+
+/* open_memstream() is POSIX-only (absent on MinGW); build the buffer by hand
+   so the output is byte-for-byte identical on every platform. */
+char *ham_fields_serialize(const ham_fields *f) {
+    char *buf = NULL; size_t len = 0, cap = 0;
+    /* Guarantee a non-NULL, NUL-terminated result even for an empty set. */
+    if (buf_append(&buf, &len, &cap, "", 0)) return NULL;
+    for (size_t i = 0; i < f->n; i++) {
+        if (buf_append(&buf, &len, &cap, f->items[i].key, strlen(f->items[i].key)) ||
+            buf_append(&buf, &len, &cap, "=", 1) ||
+            enc_append(&buf, &len, &cap, f->items[i].val) ||
+            buf_append(&buf, &len, &cap, "\n", 1)) {
+            free(buf);
+            return NULL;
+        }
+    }
     return buf;
 }
 

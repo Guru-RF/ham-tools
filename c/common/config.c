@@ -6,6 +6,8 @@
 #include <string.h>
 #include <yaml.h>
 
+#include "compat.h"
+
 static char *xstrdup(const char *s) {
     if (!s) return NULL;
     size_t n = strlen(s) + 1;
