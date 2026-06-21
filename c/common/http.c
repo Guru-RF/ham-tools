@@ -39,6 +39,11 @@ int ham_http_get(const char *url, const char *user_agent, ham_buf *out) {
     curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, write_cb);
     curl_easy_setopt(c, CURLOPT_WRITEDATA, out);
     if (user_agent) curl_easy_setopt(c, CURLOPT_USERAGENT, user_agent);
+#ifdef _WIN32
+    /* A stock Windows machine has no OpenSSL CA bundle, so HTTPS peer
+       verification fails. Tell curl to use the OS certificate store. */
+    curl_easy_setopt(c, CURLOPT_SSL_OPTIONS, (long)CURLSSLOPT_NATIVE_CA);
+#endif
 
     CURLcode rc = curl_easy_perform(c);
     long http = 0;
