@@ -91,8 +91,9 @@ endif
 # Linking everything statically removes the external DLLs entirely.
 ifeq ($(STATIC),1)
   PKGS := $(PKG) --static
-  # Tell the headers the libs are static, else they decorate symbols dllimport.
-  CPPFLAGS += -DCURL_STATICLIB -DLIBXML_STATIC -DYAML_DECLARE_STATIC
+  # Tell the headers the libs are static, else they decorate symbols dllimport
+  # (curl/xml2/yaml/ncurses all do this on Windows; the rest default to static).
+  CPPFLAGS += -DCURL_STATICLIB -DLIBXML_STATIC -DYAML_DECLARE_STATIC -DNCURSES_STATIC
   # Re-resolve each dependency to its full static (Libs.private) chain.
   CURL_LIBS     := $(shell $(PKGS) --libs libcurl)
   XML2_CFLAGS   := $(shell $(PKGS) --cflags libxml-2.0)
