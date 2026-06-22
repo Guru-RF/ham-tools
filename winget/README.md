@@ -15,8 +15,11 @@ It installs the portable `.zip` archives built by
 **x64** and **arm64**, exposing `qrz`, `qte`, `dxsummit`, `dxheat` and
 `holycluster` on the user's `PATH`.
 
-The `0.2.0` manifest is filled in and validated (`winget validate` passes; the
-installer SHA256s match the published release zips).
+The `0.2.1` manifest is filled in and validated (`winget validate` passes; the
+installer SHA256s match the published release zips). The binaries are linked
+statically, so the portable .zip carries no DLLs — winget runs each exe via a
+symlink whose directory is not on the DLL search path, which made the earlier
+dynamically-linked 0.2.0 build fail validation with STATUS_DLL_NOT_FOUND.
 
 ## Publishing a new version
 
@@ -24,7 +27,7 @@ installer SHA256s match the published release zips).
    Windows workflow builds both architectures and attaches
    `ham-tools-<version>-windows-x64.zip` and `…-arm64.zip` (plus `.sha256`
    files) to the GitHub Release.
-2. Copy `manifests/g/Guru-RF/ham-tools/0.2.0/` to a new `<version>/` directory,
+2. Copy `manifests/g/Guru-RF/ham-tools/0.2.1/` to a new `<version>/` directory,
    bump `PackageVersion` and the installer URLs, and paste the real
    `InstallerSha256` for each architecture (from the release `.sha256` assets,
    or `winget hash <zip>`).
