@@ -1,8 +1,9 @@
 name: Windows
 
 # Builds native Windows binaries for x86_64 (Intel/AMD) and ARM64 under
-# MSYS2 MinGW-w64, bundles their runtime DLLs into portable .zip archives,
-# and (on a version tag) publishes them to a GitHub Release for winget.
+# MSYS2 MinGW-w64, statically linked into self-contained portable .zip archives
+# (no external DLLs — winget runs portable exes via a symlink whose directory is
+# not on the DLL search path), and publishes them to a GitHub Release on a tag.
 
 on:
   push:
@@ -62,8 +63,8 @@ jobs:
             ${{ matrix.prefix }}-readline
             ${{ matrix.prefix }}-libwebsockets
 
-      - name: Build
-        run: make -C c CC=${{ matrix.cc }}
+      - name: Build (static)
+        run: make -C c CC=${{ matrix.cc }} STATIC=1
 
       - name: Determine version
         id: ver
@@ -75,7 +76,7 @@ jobs:
           fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
 
-      - name: Stage binaries + runtime DLLs
+      - name: Stage binaries (verify fully static)
         run: |
           set -euo pipefail
           # Fixed internal folder name so the winget manifest can share one
@@ -85,13 +86,20 @@ jobs:
           for t in qte qrz dxsummit dxheat holycluster; do
             cp "c/$t/$t.exe" "$stage/"
           done
-          # Copy every dependent DLL that lives under the MinGW prefix
-          # (ldd is transitive). System DLLs in C:\Windows are left out.
+          # Sanity gate: a portable winget package must carry no external DLLs.
+          # Fail loudly if any binary still depends on a DLL under the MinGW
+          # prefix, i.e. it did not link statically. (System DLLs in C:\Windows
+          # are always present on the target and are fine.)
+          leaked=0
           for exe in "$stage"/*.exe; do
-            ldd "$exe" | awk -v p="$MINGW_PREFIX" '$3 ~ "^"p"/" {print $3}'
-          done | sort -u | while read -r dll; do
-            cp -n "$dll" "$stage/"
+            deps=$(ldd "$exe" | awk -v p="$MINGW_PREFIX" '$3 ~ "^"p"/" {print $3}')
+            if [ -n "$deps" ]; then
+              echo "::error::$(basename "$exe") still depends on MinGW DLLs:"
+              echo "$deps"
+              leaked=1
+            fi
           done
+          [ "$leaked" -eq 0 ] || { echo "Static link incomplete (see errors above)."; exit 1; }
           cp README.md LICENSE "$stage/" 2>/dev/null || true
           ls -l "$stage"
           zipbase="ham-tools-${{ steps.ver.outputs.version }}-windows-${{ matrix.arch }}"

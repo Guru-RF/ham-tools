@@ -84,6 +84,34 @@ else
   READLINE_LIBS   := -lreadline
 endif
 
+# --- static linking (Windows / MinGW portable builds): make STATIC=1 -------
+# winget installs portable apps by symlinking each .exe into a Links/ dir; the
+# Windows loader then searches THAT dir for DLLs, not the real folder where the
+# bundled DLLs live, so dynamically-linked binaries die with STATUS_DLL_NOT_FOUND.
+# Linking everything statically removes the external DLLs entirely.
+ifeq ($(STATIC),1)
+  PKGS := $(PKG) --static
+  # Tell the headers the libs are static, else they decorate symbols dllimport.
+  CPPFLAGS += -DCURL_STATICLIB -DLIBXML_STATIC -DYAML_DECLARE_STATIC
+  # Re-resolve each dependency to its full static (Libs.private) chain.
+  CURL_LIBS     := $(shell $(PKGS) --libs libcurl)
+  XML2_CFLAGS   := $(shell $(PKGS) --cflags libxml-2.0)
+  XML2_LIBS     := $(shell $(PKGS) --libs libxml-2.0)
+  SQLITE_LIBS   := $(shell $(PKGS) --libs sqlite3)
+  NCURSES_LIBS  := $(shell $(PKGS) --libs ncursesw)
+  YAML_LIBS     := $(shell $(PKGS) --libs yaml-0.1)
+  JANSSON_LIBS  := $(shell $(PKGS) --libs jansson)
+  READLINE_LIBS := $(shell $(PKGS) --libs readline)
+  # MSYS2 names the static libwebsockets archive libwebsockets_static.a, so the
+  # plain -lwebsockets would otherwise resolve to the import lib (the DLL).
+  LWS_LIBS      := $(subst -lwebsockets,-lwebsockets_static,$(shell $(PKGS) --libs libwebsockets))
+  # Force static archives, and let ld iterate the circular curl/openssl/ssh2
+  # chain inside a group so single-pass resolution doesn't drop symbols.
+  LDFLAGS     += -static
+  GROUP_START := -Wl,--start-group
+  GROUP_END   := -Wl,--end-group
+endif
+
 PREFIX ?= $(HOME)
 
 # --- objects -------------------------------------------------------------
@@ -132,19 +160,19 @@ holycluster/%.o: holycluster/%.c
 # --- link ---------------------------------------------------------------
 
 qte/qte$(EXE): $(QTE_OBJS) $(COMMON_OBJS)
-	$(CC) -o $@ $^ $(CURL_LIBS) $(JANSSON_LIBS) $(YAML_LIBS) -lm
+	$(CC) $(LDFLAGS) -o $@ $^ $(GROUP_START) $(CURL_LIBS) $(JANSSON_LIBS) $(YAML_LIBS) -lm $(GROUP_END)
 
 qrz/qrz$(EXE): $(QRZ_OBJS) $(COMMON_OBJS)
-	$(CC) -o $@ $^ $(CURL_LIBS) $(XML2_LIBS) $(SQLITE_LIBS) $(READLINE_LIBS) $(YAML_LIBS)
+	$(CC) $(LDFLAGS) -o $@ $^ $(GROUP_START) $(CURL_LIBS) $(XML2_LIBS) $(SQLITE_LIBS) $(READLINE_LIBS) $(YAML_LIBS) $(GROUP_END)
 
 dxsummit/dxsummit$(EXE): $(DXSUMMIT_OBJS) $(COMMON_OBJS) $(COMMON_TUI_OBJ)
-	$(CC) -o $@ $^ $(CURL_LIBS) $(NCURSES_LIBS) $(YAML_LIBS) -lpthread -lm
+	$(CC) $(LDFLAGS) -o $@ $^ $(GROUP_START) $(CURL_LIBS) $(NCURSES_LIBS) $(YAML_LIBS) -lpthread -lm $(GROUP_END)
 
 dxheat/dxheat$(EXE): $(DXHEAT_OBJS) $(COMMON_OBJS) $(COMMON_TUI_OBJ)
-	$(CC) -o $@ $^ $(CURL_LIBS) $(JANSSON_LIBS) $(NCURSES_LIBS) $(YAML_LIBS) -lpthread -lm
+	$(CC) $(LDFLAGS) -o $@ $^ $(GROUP_START) $(CURL_LIBS) $(JANSSON_LIBS) $(NCURSES_LIBS) $(YAML_LIBS) -lpthread -lm $(GROUP_END)
 
 holycluster/holycluster$(EXE): $(HOLYCLUSTER_OBJS) $(COMMON_OBJS) $(COMMON_TUI_OBJ)
-	$(CC) -o $@ $^ $(CURL_LIBS) $(LWS_LIBS) $(JANSSON_LIBS) $(NCURSES_LIBS) $(YAML_LIBS) -lpthread -lm
+	$(CC) $(LDFLAGS) -o $@ $^ $(GROUP_START) $(CURL_LIBS) $(LWS_LIBS) $(JANSSON_LIBS) $(NCURSES_LIBS) $(YAML_LIBS) -lpthread -lm $(GROUP_END)
 
 # --- install / clean ----------------------------------------------------
 
