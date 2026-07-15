@@ -105,7 +105,13 @@ ifeq ($(STATIC),1)
   READLINE_LIBS := $(shell $(PKGS) --libs readline)
   # MSYS2 names the static libwebsockets archive libwebsockets_static.a, so the
   # plain -lwebsockets would otherwise resolve to the import lib (the DLL).
-  LWS_LIBS      := $(subst -lwebsockets,-lwebsockets_static,$(shell $(PKGS) --libs libwebsockets))
+  # Newer libwebsockets is built with the libuv event loop but its .pc does not
+  # list libuv as a static dep, so pull it (and its Win32 deps) in explicitly.
+  LWS_UV_LIBS   := $(shell $(PKGS) --libs libuv 2>/dev/null)
+  ifeq ($(strip $(LWS_UV_LIBS)),)
+    LWS_UV_LIBS := -luv
+  endif
+  LWS_LIBS      := $(subst -lwebsockets,-lwebsockets_static,$(shell $(PKGS) --libs libwebsockets)) $(LWS_UV_LIBS)
   # Force static archives, and let ld iterate the circular curl/openssl/ssh2
   # chain inside a group so single-pass resolution doesn't drop symbols.
   LDFLAGS     += -static
