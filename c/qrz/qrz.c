@@ -245,7 +245,9 @@ static void drain_fifo(void) {
 static void on_sigint(int s) { (void)s; g_running = 0; }
 
 int main(int argc, char **argv) {
-    if (ham_config_load(&g_cfg) != 0) return 1;
+    int cfg_rc = ham_config_load(&g_cfg);
+    if (cfg_rc == HAM_CONFIG_CREATED) return 0;
+    if (cfg_rc != 0) return 1;
     if (ham_configdir_ensure() != 0) return 1;
 
     g_cache = ham_cache_open();

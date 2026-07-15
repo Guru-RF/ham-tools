@@ -105,7 +105,9 @@ int main(int argc, char **argv) {
         if (strcmp(argv[i], "--dump") == 0) return run_dump();
 
     ham_config cfg;
-    if (ham_config_load(&cfg) != 0) return 1;
+    int cfg_rc = ham_config_load(&cfg);
+    if (cfg_rc == HAM_CONFIG_CREATED) return 0;
+    if (cfg_rc != 0) return 1;
 
     ham_tui_init("Flag", cfg.fifo_path);
 

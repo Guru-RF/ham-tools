@@ -163,8 +163,10 @@ All tools read a single YAML file:
 | Linux / macOS | `~/.config/ham-tools/config.yaml` |
 | Windows | `%APPDATA%\ham-tools\config.yaml` |
 
+The first time you run any tool without a config, it writes a starter
+`config.yaml` at that location and tells you where — just edit it and run again.
 The same directory also holds the `qrz` SQLite cache and REPL history (and, on
-Linux/macOS, the lookup FIFO). A minimal config:
+Linux/macOS, the lookup FIFO). A minimal config looks like:
 
 ```yaml
 verbose: false
@@ -186,24 +188,20 @@ qrz:
 
 ### Editing the config on Windows
 
-The config lives at `%APPDATA%\ham-tools\config.yaml` — which expands to
-`C:\Users\<you>\AppData\Roaming\ham-tools\config.yaml` (the `AppData` folder is
-hidden in Explorer). The easiest way to create and open it is from PowerShell:
+Run any tool once (e.g. `qrz`) to have it create the starter config, then open
+it in Notepad:
 
 ```pwsh
-$dir = "$env:APPDATA\ham-tools"
-New-Item -ItemType Directory -Force -Path $dir | Out-Null
-notepad "$dir\config.yaml"
+notepad "$env:APPDATA\ham-tools\config.yaml"
 ```
 
-Paste the YAML above, set your `qth` and QRZ.com credentials, and save. A few
-Windows-specific tips:
+That path expands to `C:\Users\<you>\AppData\Roaming\ham-tools\config.yaml` (the
+`AppData` folder is hidden in Explorer). Set your `qth` and QRZ.com credentials
+and save. A couple of Windows tips:
 
-- Save as plain **UTF-8**. If Notepad's *Save as type* adds a `.txt` extension,
-  set it to **All files** and keep the name `config.yaml`.
+- Save as plain **UTF-8** and keep the name `config.yaml` (don't let Notepad add
+  a `.txt` extension).
 - Use **spaces**, not tabs, for indentation (YAML rejects tabs).
-- Paths in the config use forward slashes or escaped backslashes; the default
-  cache/history locations need no configuration.
 
 ---
 

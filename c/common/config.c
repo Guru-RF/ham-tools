@@ -134,6 +134,33 @@ static int parse_events(yaml_parser_t *p, ham_config *cfg) {
     return 0;
 }
 
+/* First-run starter config. Written verbatim so the user can edit it quickly. */
+static const char DEFAULT_CONFIG[] =
+    "# ham-tools configuration -- edit the values below, then re-run.\n"
+    "\n"
+    "verbose: false\n"
+    "\n"
+    "# Your station location -- required by `qte` for bearing calculations.\n"
+    "qth:\n"
+    "  latitude:  0.0\n"
+    "  longitude: 0.0\n"
+    "\n"
+    "# QRZ.com credentials -- required by `qrz`.\n"
+    "qrz:\n"
+    "  com:\n"
+    "    username: \"YOURCALL\"\n"
+    "    password: \"your-qrz-password\"\n";
+
+static int write_default_config(const char *path) {
+    if (ham_configdir_ensure() != 0) return -1;
+    FILE *f = fopen(path, "wb");
+    if (!f) return -1;
+    size_t n = sizeof(DEFAULT_CONFIG) - 1;
+    int ok = (fwrite(DEFAULT_CONFIG, 1, n, f) == n);
+    fclose(f);
+    return ok ? 0 : -1;
+}
+
 int ham_config_load(ham_config *cfg) {
     memset(cfg, 0, sizeof(*cfg));
 
@@ -142,8 +169,18 @@ int ham_config_load(ham_config *cfg) {
 
     FILE *f = fopen(path, "rb");
     if (!f) {
-        fprintf(stderr, "config: cannot open %s\n", path);
-        return -1;
+        /* First run: drop a starter template the user can edit, and report
+           CREATED so the caller can exit successfully instead of erroring. */
+        if (write_default_config(path) == 0) {
+            fprintf(stderr,
+                    "ham-tools: no config found, so a starter one was created at\n"
+                    "  %s\n"
+                    "Edit it with your station details, then run this command again.\n",
+                    path);
+            return HAM_CONFIG_CREATED;
+        }
+        fprintf(stderr, "config: cannot open or create %s\n", path);
+        return HAM_CONFIG_ERROR;
     }
 
     yaml_parser_t parser;

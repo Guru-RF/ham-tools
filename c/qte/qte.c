@@ -28,7 +28,9 @@ int main(int argc, char **argv) {
     }
 
     ham_config cfg;
-    if (ham_config_load(&cfg) != 0) { free(query); return 1; }
+    int cfg_rc = ham_config_load(&cfg);
+    if (cfg_rc == HAM_CONFIG_CREATED) { free(query); return 0; }
+    if (cfg_rc != 0) { free(query); return 1; }
     if (cfg.has_qth != 3) {
         fprintf(stderr, "qte: qth.latitude / qth.longitude missing from config\n");
         ham_config_free(&cfg); free(query);
