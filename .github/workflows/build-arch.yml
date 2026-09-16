@@ -1,0 +1,48 @@
+# Build and test on Arch Linux, the base Omarchy runs on.
+#
+# Every push and pull request is built inside an archlinux container and the
+# binaries are smoke-tested. The signed packages that go to repo.rf.guru are
+# built from packaging/aur/ against the published tag tarball, whose checksum
+# only exists once the tag does — that happens in publish-repo.yml, not here.
+name: build-arch
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+
+    steps:
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+              git curl libyaml jansson libxml2 sqlite readline ncurses libwebsockets
+
+      - uses: actions/checkout@v4
+
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build
+        run: make -C c -j"$(nproc)"
+
+      - name: Smoke-test the binaries
+        run: |
+          set -euo pipefail
+          # qte prints its usage and exits 1 before it reads any config.
+          out="$(c/qte/qte 2>&1)" && { echo "::error::qte exited 0 without an address"; exit 1; }
+          [[ "$out" == *"qte <address>"* ]] || { echo "::error::unexpected qte usage: $out"; exit 1; }
+          # The rest need the network and a config, so just prove they linked.
+          for t in qrz dxsummit dxheat holycluster; do
+            ldd "c/$t/$t" > /dev/null
+          done
+
+      - name: Stage an install
+        run: |
+          make -C c install PREFIX="$PWD/stage/usr"
+          ls -l stage/usr/bin

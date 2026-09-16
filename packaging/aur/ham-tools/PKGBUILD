@@ -1,0 +1,42 @@
+# Maintainer: Joeri Van Dooren <ure@on6ure.be>
+#
+# The five command-line amateur-radio tools: qrz, qte, dxsummit, dxheat and
+# holycluster. Built from the published tag tarball, so the checksum below
+# only exists once the tag does.
+
+pkgname=ham-tools
+pkgver=0.2.2
+pkgrel=1
+pkgdesc="Command-line amateur-radio tools: callsign lookup, bearings, DX cluster monitors"
+arch=(x86_64 aarch64)
+url="https://github.com/Guru-RF/ham-tools"
+license=(MIT)
+depends=(glibc curl libyaml jansson libxml2 sqlite readline ncurses libwebsockets)
+source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
+sha256sums=('2ad6c1b9ab07ce9dfc7050e858971f94afb270aec4ba190e2733096eecf0aeca')
+
+build() {
+    # 0.2.2's Makefile builds with a strict -std=c11, under which glibc hides
+    # strdup() and Arch's GCC then rejects the implicit declaration. Ask for
+    # the POSIX declarations here; releases after 0.2.2 do it themselves.
+    # -Icommon has to be repeated because a make(1) command-line assignment
+    # overrides the Makefile's own `CPPFLAGS +=`.
+    make -C "$pkgname-$pkgver/c" CPPFLAGS="$CPPFLAGS -Icommon -D_DEFAULT_SOURCE"
+}
+
+check() {
+    # Every other tool needs the network and a config to do anything, so the
+    # check is qte's usage: printed to stderr, exit 1, before any config load.
+    local out
+    out="$("$pkgname-$pkgver/c/qte/qte" 2>&1)" && return 1
+    [[ "$out" == *"qte <address>"* ]]
+}
+
+package() {
+    # The Makefile's install target has no DESTDIR of its own, so PREFIX
+    # carries the staging directory.
+    make -C "$pkgname-$pkgver/c" install PREFIX="$pkgdir/usr"
+
+    install -Dm644 "$pkgname-$pkgver/README.md" -t "$pkgdir/usr/share/doc/$pkgname"
+    install -Dm644 "$pkgname-$pkgver/LICENSE" -t "$pkgdir/usr/share/licenses/$pkgname"
+}

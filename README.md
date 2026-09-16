@@ -38,6 +38,56 @@ This builds all five tools and installs them onto your `PATH`.
 
 ---
 
+## Install on Arch / Omarchy
+
+### From repo.rf.guru (recommended)
+
+RF.Guru's own signed package repository. Once it's set up, updates arrive with
+your normal system update.
+
+Trust the repository's signing key once:
+
+```sh
+curl -fsSLO https://repo.rf.guru/repo-key.asc
+sudo pacman-key --add repo-key.asc
+sudo pacman-key --lsign-key 878DC4CB2070252EFC08E2AEAFD96E81AB70B5CA
+```
+
+Add the repository to the end of `/etc/pacman.conf`:
+
+```ini
+[guru]
+SigLevel = Required
+Server = https://repo.rf.guru/arch/$repo/os/$arch
+```
+
+Then install:
+
+```sh
+sudo pacman -Sy ham-tools
+```
+
+### From a GitHub release
+
+Each [release](https://github.com/Guru-RF/ham-tools/releases) has a ready-built
+x86_64 package:
+
+```sh
+sudo pacman -U ham-tools-*.pkg.tar.zst
+```
+
+### Building the package yourself
+
+The PKGBUILD is in [packaging/aur/ham-tools](packaging/aur/ham-tools) and builds
+from the tagged release:
+
+```sh
+git clone https://github.com/Guru-RF/ham-tools
+cd ham-tools/packaging/aur/ham-tools && makepkg -si
+```
+
+---
+
 ## Install on Windows (winget)
 
 Native Windows builds are available for both **x64** (Intel/AMD) and **ARM64**:
@@ -104,6 +154,13 @@ needs).
 sudo apt install build-essential pkg-config \
   libcurl4-openssl-dev libjansson-dev libyaml-dev libwebsockets-dev \
   libreadline-dev libsqlite3-dev libxml2-dev libncurses-dev
+```
+
+#### Arch / Omarchy
+
+```sh
+sudo pacman -S --needed base-devel pkgconf \
+  curl libyaml jansson libxml2 sqlite readline ncurses libwebsockets
 ```
 
 #### Windows (MSYS2 / MinGW-w64)

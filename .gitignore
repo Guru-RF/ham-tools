@@ -9,6 +9,12 @@
 /c/dxheat/dxheat
 /c/holycluster/holycluster
 
+# makepkg working files (packaging/aur/*)
+src/
+pkg/
+*.pkg.tar.zst
+*.tar.gz
+
 # macOS
 .DS_Store
 

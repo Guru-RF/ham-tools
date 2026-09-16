@@ -1,0 +1,21 @@
+pkgbase = ham-tools
+	pkgdesc = Command-line amateur-radio tools: callsign lookup, bearings, DX cluster monitors
+	pkgver = 0.2.2
+	pkgrel = 1
+	url = https://github.com/Guru-RF/ham-tools
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	depends = glibc
+	depends = curl
+	depends = libyaml
+	depends = jansson
+	depends = libxml2
+	depends = sqlite
+	depends = readline
+	depends = ncurses
+	depends = libwebsockets
+	source = ham-tools-0.2.2.tar.gz::https://github.com/Guru-RF/ham-tools/archive/refs/tags/v0.2.2.tar.gz
+	sha256sums = 2ad6c1b9ab07ce9dfc7050e858971f94afb270aec4ba190e2733096eecf0aeca
+
+pkgname = ham-tools
