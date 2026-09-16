@@ -13,8 +13,12 @@ ifdef WINDOWS
   STD := gnu11
   EXE := .exe
 else
+  # Strict c11 defines __STRICT_ANSI__, which hides glibc's POSIX and BSD
+  # declarations (strdup, strcasecmp, M_PI); GCC 15+ rejects the resulting
+  # implicit declarations outright. _DEFAULT_SOURCE asks for them back.
   STD := c11
   EXE :=
+  CPPFLAGS += -D_DEFAULT_SOURCE
 endif
 
 CFLAGS  ?= -O2 -g -Wall -Wextra -Wno-unused-parameter
